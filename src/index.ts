@@ -1,10 +1,10 @@
 import * as express from 'express';
-import { v4 } from 'uuid';
+// import { v4 } from 'uuid';
 
-import { connect } from './db';
 import { routes } from './routes';
+import './db';
 
-const port = 3000;
+const port = process.env.PORT
 const app = express();
 
 app.use(express.json());
