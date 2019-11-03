@@ -7,5 +7,5 @@ export const workersRoutes = Router();
 workersRoutes.use(authorization);
 
 workersRoutes.get('/', (req, res) => {
-    return res.send({ id: req['userId'] })
+    return res.send({ user: req['user'], token: req['token'] })
 })

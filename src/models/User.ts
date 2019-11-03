@@ -11,6 +11,8 @@ interface IUserDoc extends mongoose.Document {
     password: string;
     createdAt: Date;
     tokens: any;
+    passwordResetToken: string;
+    passwordResetExpires: Date;
     generateAuthToken(): Promise<string>;
 }
 
@@ -37,18 +39,27 @@ const userSchema = new mongoose.Schema<IUserDoc>({
     password: {
         type: String,
         required: true,
+        select: false,
         minLength: 7
     },
     createdAt: {
         type: Date,
         default: Date.now
     },
-    tokens: [{
-        token: {
-            type: String,
-            required: true
-        }
-    }]
+    // tokens: [{
+    //     token: {
+    //         type: String,
+    //         required: true
+    //     }
+    // }],
+    passwordResetToken: {
+        type: String,
+        select: false
+    },
+    passwordResetExpires: {
+        type: Date,
+        select: false
+    }
 })
 
 userSchema.pre<IUserDoc>('save', async function (next) {
@@ -66,8 +77,8 @@ userSchema.methods.generateAuthToken = async function () {
     const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
         expiresIn: 86400
     })
-    user.tokens = user.tokens.concat({ token })
-    await user.save()
+    // user.tokens = user.tokens.concat({ token })
+    // await user.save()
     return token
 }
 
@@ -75,11 +86,11 @@ userSchema.statics.findByCredentials = async (email: string, password: string) =
     // Search for a user by email and password.
     const user = await User.findOne({ email })
     if (!user) {
-        throw new Error('Invalid login credentials')
+        throw new Error('Credenciais inválidas!')
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password)
     if (!isPasswordMatch) {
-        throw new Error('Invalid login credentials')
+        throw new Error('Credenciais inválidas!')
     }
     return user
 }
