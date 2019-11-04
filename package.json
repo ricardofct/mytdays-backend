@@ -5,9 +5,9 @@
   "main": "src/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prod": "tsc && node ./build/index.js",
-    "build": "tsc && node ./build/index.js",
-    "start": "env-cmd -f ./.env node build/index.js",
+    "prod": "tsc && node ./dist/index.js",
+    "build": "tsc",
+    "start": "env-cmd -f ./.env node dist/index.js",
     "dev": "env-cmd -f ./.env nodemon src/index.ts",
     "dev:debug": "env-cmd -f ./.env nodemon --inspect src/index.ts"
   },
