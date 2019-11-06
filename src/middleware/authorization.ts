@@ -26,7 +26,7 @@ export const authorization = async (req, res, next) => {
 
         const user = await User.findOne({
             _id: decoded.id,
-            // 'tokens.token': token
+            'tokens.token': token
         })
 
         if (!user) {

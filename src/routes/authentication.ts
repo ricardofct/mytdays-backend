@@ -2,14 +2,17 @@ import { Router } from 'express';
 import * as crypto from 'crypto';
 
 import { User } from '../models/User';
-import { sendMail } from '../modules/mail';
 import { Invite } from '../models/Invite';
-import { sendInviteEmail, sendForgotPasswordEmail } from '../modules/send-grid';
+import { sendForgotPasswordEmail } from '../modules/send-grid';
+import { Audit } from '../models/Audit';
+import { AuditTypes } from '../contants';
+import { authorization } from '../middleware/authorization';
 
 export const authRoutes = Router();
 
 authRoutes.post('/register', async (req, res) => {
     try {
+        // Validação de invite token
         const inviteToken = req.query.inviteToken;
 
         if (inviteToken) {
@@ -25,10 +28,16 @@ authRoutes.post('/register', async (req, res) => {
             }
         }
 
+        // Inserção de User
         const user = new User(req.body)
         await user.save()
 
+        // Geração de jwt token
         const token = await user.generateAuthToken()
+
+        // Inserção de audit
+        const audit = new Audit({ userId: user._id, auditType: AuditTypes.REGISTER, ipConn: req.ip });
+        await audit.save();
 
         return res.status(201).send({ token })
     } catch (error) {
@@ -46,7 +55,27 @@ authRoutes.post('/login', async (req, res) => {
         }
         const token = await user.generateAuthToken()
 
+        const audit = new Audit({ userId: user._id, auditType: AuditTypes.LOGIN, ipConn: req.ip });
+        await audit.save();
+
         return res.status(200).send({ token })
+    } catch (error) {
+        return res.status(400).send({ error: error.message })
+    }
+});
+
+authRoutes.post('/refresh_token', authorization, async (req, res) => {
+    try {
+        const token = req['token'];
+        const user = req['user'];
+
+        user.tokens = user.tokens.filter(
+            oldtoken => oldtoken.token !== token
+        )
+
+        const newToken = await user.generateAuthToken();
+
+        return res.status(200).send({ token: newToken })
     } catch (error) {
         return res.status(400).send({ error: error.message })
     }
@@ -75,6 +104,33 @@ authRoutes.post('/forgot_password', async (req, res) => {
         await user.save();
 
         sendForgotPasswordEmail(user.email, token);
+
+        return res.status(202).send();
+
+    } catch (e) {
+        return res.status(400).send({ error: 'Erro ao recuperar senha!' });
+    }
+});
+
+authRoutes.post('/reset_password_token_validation', async (req, res) => {
+    const { token } = req.body;
+
+    try {
+        const user = await User.findOne({ passwordResetToken: token }).select('+passwordResetExpires');
+
+        if (!user) {
+            return res.status(400).send({ error: 'Token inválido!' });
+        }
+
+        if (token !== user.passwordResetToken) {
+            return res.status(400).send({ error: 'Token inválido!' });
+        }
+
+        const now = new Date();
+        if (now > user.passwordResetExpires) {
+            return res.status(400).send({ error: 'Token expirou!' });
+        }
+
 
         return res.status(202).send();
 

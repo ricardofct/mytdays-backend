@@ -22,14 +22,17 @@ workersRoutes.post('/invite', async (req, res) => {
 
         const existedInvite = await Invite.findOne({ email });
         const now = new Date;
+
+        // Valida se convite já existe
         if (existedInvite && existedInvite.expiresAt > now) {
             if (existedInvite.emailAlreadyExist) {
-                emailType = EmailTypes.INVITE_TO_REGISTER;
-            } else {
                 emailType = EmailTypes.INVITE_TO_ACCEPT;
+            } else {
+                emailType = EmailTypes.INVITE_TO_REGISTER;
             }
 
             sendInviteEmail(emailType, existedInvite);
+
             const { invitedEmail, sented, error, status } = existedInvite;
             return res.status(202).send({
                 invite: {
@@ -47,17 +50,18 @@ workersRoutes.post('/invite', async (req, res) => {
 
         let invite: IInviteDoc;
 
+        // Valida se email já existe
         if (invitedUser) {
             emailType = EmailTypes.INVITE_TO_ACCEPT;
 
-            invite = new Invite({ owner: req['user'], invitedEmail: invitedUser.email, token, expiresAt })
-            await invite.save();
+            invite = new Invite({ owner: req['user'], invitedEmail: invitedUser.email, token, expiresAt, emailAlreadyExist: true })
         } else {
             emailType = EmailTypes.INVITE_TO_REGISTER;
 
             invite = new Invite({ owner: req['user'], invitedEmail: email, token, expiresAt })
-            await invite.save();
         }
+
+        await invite.save();
         sendInviteEmail(emailType, invite);
 
         const { invitedEmail, sented, error, status } = invite;

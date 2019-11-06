@@ -46,12 +46,12 @@ const userSchema = new mongoose.Schema<IUserDoc>({
         type: Date,
         default: Date.now
     },
-    // tokens: [{
-    //     token: {
-    //         type: String,
-    //         required: true
-    //     }
-    // }],
+    tokens: [{
+        token: {
+            type: String,
+            required: true
+        }
+    }],
     passwordResetToken: {
         type: String,
         select: false
@@ -74,11 +74,23 @@ userSchema.pre<IUserDoc>('save', async function (next) {
 userSchema.methods.generateAuthToken = async function () {
     // Generate an auth token for the user
     const user = this;
+
+    user.tokens = user.tokens.filter(
+        oldtoken => {
+            try {
+                const decoded = jwt.verify(oldtoken.token, process.env.JWT_KEY);
+                return true;
+            } catch (err) {
+                return false;
+            }
+        }
+    );
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
-        expiresIn: 86400
+        expiresIn: process.env.TOKEN_LIFE
     })
-    // user.tokens = user.tokens.concat({ token })
-    // await user.save()
+    user.tokens = user.tokens.concat({ token })
+    await user.save()
     return token
 }
 
