@@ -7,17 +7,12 @@ import * as mongoose from 'mongoose';
 
 interface ICarDoc extends mongoose.Document {
     name: string;
-    email: string;
-    password: string;
+    plate: string;
+    owner: string;
     createdAt: Date;
-    tokens: any;
-    passwordResetToken: string;
-    passwordResetExpires: Date;
-    generateAuthToken(): Promise<string>;
 }
 
 interface ICarModel extends mongoose.Model<ICarDoc> {
-    findByCredentials(email: string, password: string): Promise<ICarDoc>;
 }
 
 const carSchema = new mongoose.Schema<ICarDoc>({
@@ -31,6 +26,14 @@ const carSchema = new mongoose.Schema<ICarDoc>({
         required: true,
         unique: true,
         lowercase: true,
+    },
+    plateDate: {
+        type: Date
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     createdAt: {
         type: Date,

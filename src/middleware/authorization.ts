@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
-
+import { Permissions } from '../models/Permissions';
 export const authorization = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -30,9 +30,16 @@ export const authorization = async (req, res, next) => {
         })
 
         if (!user) {
-            return res.status(401).send({ error: 'Utilizador não encontrado!' });
+            return res.status(404).send({ error: 'Utilizador não encontrado!' });
         }
 
+        const permissions = await Permissions.findById(user.permissions);
+
+        if (!permissions) {
+            return res.status(401).send({ error: 'Utilizador sem permissões!' });
+        }
+
+        req.permissions = permissions;
         req.user = user;
         req.token = token;
 

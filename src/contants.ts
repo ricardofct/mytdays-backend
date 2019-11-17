@@ -13,3 +13,6 @@ export enum AuditTypes {
     REGISTER = 1,
     LOGIN = 2,
 }
+
+export enum DomainsTypes {
+}

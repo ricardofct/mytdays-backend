@@ -2,6 +2,7 @@
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as mongoose from 'mongoose';
+import { Permissions } from './Permissions';
 
 // import { mongoose } from './../db';
 
@@ -9,6 +10,7 @@ interface IUserDoc extends mongoose.Document {
     name: string;
     email: string;
     password: string;
+    permissions: string;
     createdAt: Date;
     tokens: any;
     passwordResetToken: string;
@@ -42,6 +44,10 @@ const userSchema = new mongoose.Schema<IUserDoc>({
         select: false,
         minLength: 7
     },
+    permissions: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Permissions'
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -65,11 +71,19 @@ const userSchema = new mongoose.Schema<IUserDoc>({
 userSchema.pre<IUserDoc>('save', async function (next) {
     // Hash the password before saving the user model
     const user = this;
+
+    if (this.isNew) {
+        const permissions = new Permissions({ basic: true, worker: false, entrepreneur: false, superhero: false });
+        await permissions.save();
+        user.permissions = permissions._id;
+    }
+
     if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8)
     }
     next()
 })
+
 
 userSchema.methods.generateAuthToken = async function () {
     // Generate an auth token for the user
@@ -79,7 +93,7 @@ userSchema.methods.generateAuthToken = async function () {
         oldtoken => {
             try {
                 const decoded = jwt.verify(oldtoken.token, process.env.JWT_KEY);
-                return true;
+                return decoded ? true : false;
             } catch (err) {
                 return false;
             }
@@ -89,7 +103,7 @@ userSchema.methods.generateAuthToken = async function () {
     const token = jwt.sign({ id: user._id }, process.env.JWT_KEY, {
         expiresIn: process.env.TOKEN_LIFE
     })
-    console.log(process.env.TOKEN_LIFE);
+
     user.tokens = user.tokens.concat({ token })
     await user.save()
     return token
