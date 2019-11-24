@@ -6,72 +6,31 @@ import { Invite, IInviteDoc } from '../models/Invite';
 import { sendInviteEmail } from '../modules/send-grid';
 import { User } from '../models/User';
 import { EmailTypes } from '../contants';
+import { Car } from '../models/Car';
+import ErrorHelper from '../helpers/ErrorHelper';
 
-export const workersRoutes = Router();
+export const carsRoutes = Router();
 
-workersRoutes.use(authorization);
+carsRoutes.use(authorization);
 
-workersRoutes.get('/', (req, res) => {
-    return res.send({ user: req['user'], token: req['token'] })
-})
-
-workersRoutes.post('/invite', async (req, res) => {
-    const { email } = req.body;
+carsRoutes.get('/', async (req, res) => {
     try {
-        let emailType: number;
+        const user = req['user']
+        const cars = await Car.find({ ownerId: user._id, });
 
-        const existedInvite = await Invite.findOne({ email });
-        const now = new Date;
+        return res.status(200).send({ cars });
+    } catch (error) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) });
+    }
+});
 
-        // Valida se convite já existe
-        if (existedInvite && existedInvite.expiresAt > now) {
-            if (existedInvite.emailAlreadyExist) {
-                emailType = EmailTypes.INVITE_TO_ACCEPT;
-            } else {
-                emailType = EmailTypes.INVITE_TO_REGISTER;
-            }
-
-            sendInviteEmail(emailType, existedInvite);
-
-            const { invitedEmail, sented, error, status } = existedInvite;
-            return res.status(202).send({
-                invite: {
-                    invitedEmail, sented, error, status
-                }
-            });
-        }
-
-        const token = crypto.randomBytes(20).toString('hex');
-
-        const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 24);
-
-        const invitedUser = await User.findOne({ email });
-
-        let invite: IInviteDoc;
-
-        // Valida se email já existe
-        if (invitedUser) {
-            emailType = EmailTypes.INVITE_TO_ACCEPT;
-
-            invite = new Invite({ owner: req['user'], invitedEmail: invitedUser.email, token, expiresAt, emailAlreadyExist: true })
-        } else {
-            emailType = EmailTypes.INVITE_TO_REGISTER;
-
-            invite = new Invite({ owner: req['user'], invitedEmail: email, token, expiresAt })
-        }
-
-        await invite.save();
-        sendInviteEmail(emailType, invite);
-
-        const { invitedEmail, sented, error, status } = invite;
-
-        return res.status(202).send({
-            invite: {
-                invitedEmail, sented, error, status
-            }
-        });
-    } catch (e) {
-        return res.status(400).send({ error: 'Erro ao enviar convite!', e });
+carsRoutes.post('/', async (req, res) => {
+    try {
+        const user = req['user']
+        const car = new Car({ ...req.body, ownerId: user._id, createdBy: user._id, updatedBy: user._id });
+        await car.save();
+        return res.status(200).send(car._id);
+    } catch (error) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) });
     }
 });

@@ -51,6 +51,24 @@ const inviteSchema = new mongoose.Schema<IInviteDoc>({
     error: {
         type: String
     },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
 })
 
 export const Invite = mongoose.model<IInviteDoc, IInviteModel>('Invite', inviteSchema)

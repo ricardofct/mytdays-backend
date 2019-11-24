@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken';
 import { User } from '../models/User';
-import { Permissions } from '../models/Permissions';
+import { Permissions } from '../models/Permission';
 export const authorization = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
@@ -35,11 +35,11 @@ export const authorization = async (req, res, next) => {
 
         const permissions = await Permissions.findById(user.permissions);
 
-        if (!permissions) {
-            return res.status(401).send({ error: 'Utilizador sem permissões!' });
-        }
+        // if (!permissions) {
+        //     return res.status(401).send({ error: 'Utilizador sem permissões!' });
+        // }
 
-        req.permissions = permissions;
+        // req.permissions = permissions;
         req.user = user;
         req.token = token;
 

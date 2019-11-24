@@ -2,11 +2,11 @@
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as mongoose from 'mongoose';
-import { Permissions } from './Permissions';
+import { Permissions } from './Permission';
 
 // import { mongoose } from './../db';
 
-interface IUserDoc extends mongoose.Document {
+export interface IUserDoc extends mongoose.Document {
     name: string;
     email: string;
     password: string;
@@ -25,13 +25,13 @@ interface IUserModel extends mongoose.Model<IUserDoc> {
 const userSchema = new mongoose.Schema<IUserDoc>({
     name: {
         type: String,
-        required: true,
+        required: [true, 'Nome é obrigatório!'],
         trim: true
     },
     email: {
         type: String,
-        required: true,
-        unique: true,
+        required: [true, 'Email é obrigatório!'],
+        unique: [true, 'Ocorreu um erro com o seu email, porfavor tente mais tarde! Se o erro persistir contacte a equipa de suporte'],
         lowercase: true,
         // validate: {
         //     validator: function (props) { return validatorJs.isEmail(props.value) },
@@ -40,27 +40,31 @@ const userSchema = new mongoose.Schema<IUserDoc>({
     },
     password: {
         type: String,
-        required: true,
+        required: [true, 'Senha é obrigatória!'],
         select: false,
         minLength: 7
     },
     permissions: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Permissions'
+        ref: 'Permissions',
+        select: false,
     },
     createdAt: {
         type: Date,
-        default: Date.now
+        default: Date.now,
     },
-    tokens: [{
-        token: {
-            type: String,
-            required: true
-        }
-    }],
+    tokens: {
+        type: [{
+            token: {
+                type: String,
+                required: true
+            }
+        }],
+        select: false,
+    },
     passwordResetToken: {
         type: String,
-        select: false
+        select: false,
     },
     passwordResetExpires: {
         type: Date,
@@ -111,7 +115,7 @@ userSchema.methods.generateAuthToken = async function () {
 
 userSchema.statics.findByCredentials = async (email: string, password: string) => {
     // Search for a user by email and password.
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password tokens');
     if (!user) {
         throw new Error('Credenciais inválidas!')
     }

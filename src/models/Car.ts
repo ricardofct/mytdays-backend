@@ -8,8 +8,12 @@ import * as mongoose from 'mongoose';
 interface ICarDoc extends mongoose.Document {
     name: string;
     plate: string;
-    owner: string;
+    plateDate: Date;
+    ownerId: string;
     createdAt: Date;
+    createdBy: string;
+    updatedAt: Date;
+    updatedBy: string;
 }
 
 interface ICarModel extends mongoose.Model<ICarDoc> {
@@ -18,19 +22,19 @@ interface ICarModel extends mongoose.Model<ICarDoc> {
 const carSchema = new mongoose.Schema<ICarDoc>({
     name: {
         type: String,
-        required: true,
+        required: [true, 'Nome é obrigatório!'],
         trim: true
     },
     plate: {
         type: String,
-        required: true,
-        unique: true,
+        required: [true, 'Matricula é obrigatória!'],
         lowercase: true,
     },
     plateDate: {
-        type: Date
+        type: Date,
+        required: [true, 'Data de matricula é obrigatória!']
     },
-    owner: {
+    ownerId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -38,6 +42,20 @@ const carSchema = new mongoose.Schema<ICarDoc>({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
 })
 
