@@ -5,7 +5,7 @@ import * as mongoose from 'mongoose';
 
 // import { mongoose } from './../db';
 
-interface ICarDoc extends mongoose.Document {
+interface IVehicleDoc extends mongoose.Document {
     name: string;
     plate: string;
     plateDate: Date;
@@ -16,10 +16,10 @@ interface ICarDoc extends mongoose.Document {
     updatedBy: string;
 }
 
-interface ICarModel extends mongoose.Model<ICarDoc> {
+interface IVehicleModel extends mongoose.Model<IVehicleDoc> {
 }
 
-const carSchema = new mongoose.Schema<ICarDoc>({
+const carSchema = new mongoose.Schema<IVehicleDoc>({
     name: {
         type: String,
         required: [true, 'Nome é obrigatório!'],
@@ -60,4 +60,4 @@ const carSchema = new mongoose.Schema<ICarDoc>({
 })
 
 
-export const Car = mongoose.model<ICarDoc, ICarModel>('Car', carSchema)
+export const Vehicle = mongoose.model<IVehicleDoc, IVehicleModel>('Vehicle', carSchema)

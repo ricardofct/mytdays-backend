@@ -9,7 +9,7 @@ import { EmailTypes } from '../contants';
 import { Workday } from '../models/Workday';
 import { Worker } from '../models/Worker';
 import ErrorHelper from '../helpers/ErrorHelper';
-import { Car } from '../models/Car';
+import { Vehicle } from '../models/Vehicle';
 
 export const workersRoutes = Router();
 
@@ -18,13 +18,8 @@ workersRoutes.use(authorization);
 workersRoutes.get('/', async (req, res) => {
     try {
         const user: IUserDoc = req['user'];
-        const cars = await Car.find({ ownerId: user._id }).select('_id');
 
-        if (!cars.length) {
-            return res.status(404).send('Crie os seus carros associar empregados!');
-        }
-
-        const workers = await Worker.find({ carId: cars }).populate('carId').populate('workerId');
+        const workers = await Worker.find({ entrepreneurId: user._id }).populate('vehicleId').populate('userId');
 
         return res.status(200).send({ workers })
     } catch (error) {
@@ -35,33 +30,55 @@ workersRoutes.get('/', async (req, res) => {
 workersRoutes.post('/', async (req, res) => {
     try {
         const {
-            workerId,
-            carId
+            vehicleId
         } = req.body;
         const user: IUserDoc = req['user'];
 
-        const worker = new Worker({ workerId, carId, createdBy: user._id, updatedBy: user._id });
-        worker.save();
+        const vehicle = await Vehicle.findById(vehicleId);
 
-        return res.status(200).send(worker._id)
+        if (!vehicle) {
+            return res.status(404).send('Veículo não encontrado!');
+        }
+
+        const newWorker = new Worker({ entrepreneurId: user._id, userId: user._id, vehicleId, createdBy: user._id, updatedBy: user._id });
+        newWorker.save();
+
+        return res.status(200).send(newWorker._id)
     } catch (error) {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
     }
 })
 
-workersRoutes.post('/workday', async (req, res) => {
+workersRoutes.get('/workdays', async (req, res) => {
+    try {
+        const user: IUserDoc = req['user'];
+
+        const worker = await Worker.find({ userId: user._id });
+
+        if (!worker) {
+            return res.status(404).send({ error: 'Funcionário não encontrado!' })
+        }
+
+        const workdays = await Workday.find({ workerId: worker })
+
+        return res.status(200).send({ workdays })
+    } catch (error) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
+    }
+})
+workersRoutes.post('/workdays', async (req, res) => {
     try {
         const {
-            carId,
+            vehicleId,
             inDate,
             outDate
         } = req.body;
         const user: IUserDoc = req['user'];
 
-        const worker = await Worker.findOne({ workerId: user._id, carId, active: true });
+        const worker = await Worker.findOne({ workerId: user._id, vehicleId, active: true });
 
         if (!worker) {
-            return res.status(404).send({ error: 'Empregado não encontrado!' })
+            return res.status(404).send({ error: 'Funcionário não encontrado!' })
         }
 
         if (inDate > outDate) {
@@ -76,6 +93,10 @@ workersRoutes.post('/workday', async (req, res) => {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
     }
 })
+
+// TODO implementar aceitar e rejeitar convite de trabalho
+workersRoutes.post('/invite/:id/accepted', async (req, res) => { })
+workersRoutes.post('/invite/:id/rejected', async (req, res) => { })
 
 workersRoutes.post('/invite', async (req, res) => {
     const { email } = req.body;

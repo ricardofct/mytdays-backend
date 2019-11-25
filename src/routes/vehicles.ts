@@ -6,30 +6,30 @@ import { Invite, IInviteDoc } from '../models/Invite';
 import { sendInviteEmail } from '../modules/send-grid';
 import { User } from '../models/User';
 import { EmailTypes } from '../contants';
-import { Car } from '../models/Car';
+import { Vehicle } from '../models/Vehicle';
 import ErrorHelper from '../helpers/ErrorHelper';
 
-export const carsRoutes = Router();
+export const vehiclesRoutes = Router();
 
-carsRoutes.use(authorization);
+vehiclesRoutes.use(authorization);
 
-carsRoutes.get('/', async (req, res) => {
+vehiclesRoutes.get('/', async (req, res) => {
     try {
         const user = req['user']
-        const cars = await Car.find({ ownerId: user._id, });
+        const vehicles = await Vehicle.find({ ownerId: user._id, });
 
-        return res.status(200).send({ cars });
+        return res.status(200).send({ vehicles });
     } catch (error) {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) });
     }
 });
 
-carsRoutes.post('/', async (req, res) => {
+vehiclesRoutes.post('/', async (req, res) => {
     try {
         const user = req['user']
-        const car = new Car({ ...req.body, ownerId: user._id, createdBy: user._id, updatedBy: user._id });
-        await car.save();
-        return res.status(200).send(car._id);
+        const vehicle = new Vehicle({ ...req.body, ownerId: user._id, createdBy: user._id, updatedBy: user._id });
+        await vehicle.save();
+        return res.status(200).send(vehicle._id);
     } catch (error) {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) });
     }

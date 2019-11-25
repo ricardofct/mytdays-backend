@@ -7,8 +7,9 @@ import { Permissions } from './Permission';
 // import { mongoose } from './../db';
 
 interface IWorkerDoc extends mongoose.Document {
-    workerId: string,
-    carId: string,
+    entrepreneurId: string,
+    userId: string,
+    vehicleId: string,
     active: boolean,
     createdAt: Date,
     createdBy: string,
@@ -20,13 +21,17 @@ interface IWorkerModel extends mongoose.Model<IWorkerDoc> {
 }
 
 const workerSchema = new mongoose.Schema<IWorkerDoc>({
-    workerId: {
+    entrepreneurId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    carId: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Car'
+        ref: 'User'
+    },
+    vehicleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vehicle'
     },
     active: {
         type: Boolean,

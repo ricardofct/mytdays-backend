@@ -2,7 +2,8 @@ import { Router } from 'express';
 
 import { authRoutes } from './authentication';
 import { workersRoutes } from './workers';
-import { carsRoutes } from './cars';
+import { vehiclesRoutes } from './vehicles';
+import { invitesRoutes } from './invites';
 
 export const routes = Router();
 
@@ -12,4 +13,5 @@ routes.get('/', async (req, res) => {
 
 routes.use('/auth', authRoutes);
 routes.use('/workers', workersRoutes);
-routes.use('/cars', carsRoutes);
+routes.use('/vehicles', vehiclesRoutes);
+routes.use('/invites', invitesRoutes);
