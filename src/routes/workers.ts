@@ -49,55 +49,6 @@ workersRoutes.post('/', async (req, res) => {
     }
 })
 
-workersRoutes.get('/workdays', async (req, res) => {
-    try {
-        const user: IUserDoc = req['user'];
-
-        const worker = await Worker.find({ userId: user._id });
-
-        if (!worker) {
-            return res.status(404).send({ error: 'Funcionário não encontrado!' })
-        }
-
-        const workdays = await Workday.find({ workerId: worker })
-
-        return res.status(200).send({ workdays })
-    } catch (error) {
-        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
-    }
-})
-workersRoutes.post('/workdays', async (req, res) => {
-    try {
-        const {
-            vehicleId,
-            inDate,
-            outDate
-        } = req.body;
-        const user: IUserDoc = req['user'];
-
-        const worker = await Worker.findOne({ workerId: user._id, vehicleId, active: true });
-
-        if (!worker) {
-            return res.status(404).send({ error: 'Funcionário não encontrado!' })
-        }
-
-        if (inDate > outDate) {
-            return res.status(400).send({ error: 'Data de entrada tem de ser inferior à de saída!' })
-        }
-
-        const workday = new Workday({ ...req.body, workerId: user._id });
-        await workday.save();
-
-        return res.status(200).send()
-    } catch (error) {
-        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
-    }
-})
-
-// TODO implementar aceitar e rejeitar convite de trabalho
-workersRoutes.post('/invite/:id/accepted', async (req, res) => { })
-workersRoutes.post('/invite/:id/rejected', async (req, res) => { })
-
 workersRoutes.post('/invite', async (req, res) => {
     const { email } = req.body;
     try {
@@ -158,3 +109,18 @@ workersRoutes.post('/invite', async (req, res) => {
         return res.status(400).send({ error: 'Erro ao enviar convite!', e });
     }
 });
+
+workersRoutes.get('/workdays', async (req, res) => {
+    try {
+
+    } catch (e) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})
+workersRoutes.get('/:id./workdays', async (req, res) => {
+    try {
+
+    } catch (e) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})

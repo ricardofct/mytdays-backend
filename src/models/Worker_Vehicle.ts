@@ -1,11 +1,14 @@
-''// import validator from 'validator';
+// import validator from 'validator';
+import * as bcrypt from 'bcryptjs';
+import * as jwt from 'jsonwebtoken';
 import * as mongoose from 'mongoose';
+import { Permissions } from './Permission';
 
 // import { mongoose } from './../db';
 
-interface IWorkerDoc extends mongoose.Document {
-    ownerId: string,
-    userId: string,
+interface IWorkerVehicleDoc extends mongoose.Document {
+    workerId: string,
+    vehicleId: string,
     active: boolean,
     createdAt: Date,
     createdBy: string,
@@ -13,16 +16,21 @@ interface IWorkerDoc extends mongoose.Document {
     updatedBy: string,
 }
 
-interface IWorkerModel extends mongoose.Model<IWorkerDoc> { }
+interface IWorkerVehicleModel extends mongoose.Model<IWorkerVehicleDoc> {
+}
 
-const workerSchema = new mongoose.Schema<IWorkerDoc>({
-    ownerId: {
+const workerVehicleSchema = new mongoose.Schema<IWorkerVehicleDoc>({
+    workerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'Worker'
     },
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    vehicleId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Vehicle'
     },
     active: {
         type: Boolean,
@@ -48,5 +56,4 @@ const workerSchema = new mongoose.Schema<IWorkerDoc>({
     },
 })
 
-export const Worker = mongoose.model<IWorkerDoc, IWorkerModel>('Worker', workerSchema)
-''
+export const WorkerVehicle = mongoose.model<IWorkerVehicleDoc, IWorkerVehicleModel>('WorkerVehicle', workerVehicleSchema)

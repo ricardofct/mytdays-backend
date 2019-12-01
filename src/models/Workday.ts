@@ -111,10 +111,11 @@ import { Permissions } from './Permission';
 // export const Workday = mongoose.model<IWorkdayDoc, IWorkdayModel>('Workday', workdaySchema)
 
 export interface DayMoment {
-    date: string,
+    date: Date,
     flag: string,
     euro: string,
     km: string,
+    justification: string,
     createdAt: Date,
     createdBy: string,
     updatedAt: Date,
@@ -137,6 +138,9 @@ const dayMomentSchema = {
     km: {
         type: String,
         required: [true, 'Km - marcava é obrigatório!'],
+    },
+    justification: {
+        type: String
     },
     createdAt: {
         type: Date,
