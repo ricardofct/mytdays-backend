@@ -3,10 +3,9 @@ import * as crypto from 'crypto';
 
 import { authorization } from '../middleware/authorization';
 import { Invite, IInviteDoc } from '../models/Invite';
-import { sendInviteEmail, sendForgotPasswordEmail } from '../modules/send-grid';
+import { sendInviteEmail } from '../modules/send-grid';
 import { User, IUserDoc } from '../models/User';
 import { EmailTypes } from '../contants';
-import { Workday } from '../models/Workday';
 import { Worker } from '../models/Worker';
 import ErrorHelper from '../helpers/ErrorHelper';
 import { Vehicle } from '../models/Vehicle';
@@ -15,11 +14,12 @@ export const workersRoutes = Router();
 
 workersRoutes.use(authorization);
 
+// Em uso
 workersRoutes.get('/', async (req, res) => {
     try {
         const user: IUserDoc = req['user'];
-
-        const workers = await Worker.find({ entrepreneurId: user._id }).populate('vehicleId').populate('userId');
+        const findOpts = user.permissions.superhero ? {} : { ownerId: user._id }
+        const workers = await Worker.find(findOpts).populate('vehicles').populate('userId').populate('ownerId').populate('updatedBy').populate('createdBy');
 
         return res.status(200).send({ workers })
     } catch (error) {
@@ -27,20 +27,36 @@ workersRoutes.get('/', async (req, res) => {
     }
 })
 
+// Em uso
 workersRoutes.post('/', async (req, res) => {
     try {
         const {
-            vehicleId
+            ownerId,
+            userId
         } = req.body;
         const user: IUserDoc = req['user'];
 
-        const vehicle = await Vehicle.findById(vehicleId);
-
-        if (!vehicle) {
-            return res.status(404).send('Veículo não encontrado!');
+        if (!user.permissions.superhero) {
+            return res.status(404).send('Sem permissões!');
         }
 
-        const newWorker = new Worker({ entrepreneurId: user._id, userId: user._id, vehicleId, createdBy: user._id, updatedBy: user._id });
+        if (ownerId === userId) {
+            return res.status(404).send('Empresário e funcionário têm que ser diferentes!');
+        }
+
+
+        const userOwner = await User.findById(ownerId).populate('permissions');
+
+        if (!userOwner || !userOwner.permissions.entrepreneur) {
+            return res.status(404).send('Empresário não encontrado!');
+        }
+        const userWorker = await User.findById(userId);
+
+        if (!userWorker) {
+            return res.status(404).send('Funcionário não encontrado!');
+        }
+
+        const newWorker = new Worker({ ownerId, userId, createdBy: user._id, updatedBy: user._id });
         newWorker.save();
 
         return res.status(200).send(newWorker._id)
@@ -117,9 +133,128 @@ workersRoutes.get('/workdays', async (req, res) => {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
     }
 })
-workersRoutes.get('/:id./workdays', async (req, res) => {
+
+workersRoutes.get('/:id/workdays', async (req, res) => {
     try {
 
+    } catch (e) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})
+
+workersRoutes.post('/:id/vehicles', async (req, res) => {
+    try {
+        const user: IUserDoc = req['user'];
+        if (!user.permissions.entrepreneur) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const workerId = req.params.id;
+        if (!workerId) {
+            return res.status(404).send('Funcionário em falta!');
+        }
+
+        const worker = await Worker.findById(workerId);
+        if (!worker) {
+            return res.status(404).send('Funcionário não encontrado!');
+        }
+
+        if (!user.permissions.superhero && user._id !== worker.ownerId) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const { vehicleId } = req.body;
+        if (!vehicleId) {
+            return res.status(404).send('Veículo em falta!');
+        }
+
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) {
+            return res.status(404).send('Veículo não encontrado!');
+        }
+
+        const vehicleAlreadyExist = worker.vehicles.includes(vehicle._id);
+        if (vehicleAlreadyExist) {
+            return res.status(404).send('Veículo já se encontra na lista do funcionário!');
+        }
+
+        worker.vehicles.push(vehicle._id)
+        worker.updatedAt = new Date();
+        worker.updatedBy = user._id;
+        worker.save()
+
+        return res.status(200).send();
+    } catch (e) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})
+
+workersRoutes.get('/:id/vehicles', async (req, res) => {
+    try {
+        const user: IUserDoc = req['user'];
+        if (!user.permissions.entrepreneur) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const workerId = req.params.id;
+        if (!workerId) {
+            return res.status(404).send('Funcionário em falta!');
+        }
+
+        const worker = await Worker.findById(workerId).populate('vehicles');
+        if (!worker) {
+            return res.status(404).send('Funcionário não encontrado!');
+        }
+
+        if (!user.permissions.superhero && user._id !== worker.ownerId) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const vehicles = worker.vehicles;
+
+        return res.status(200).send({ vehicles });
+    } catch (e) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})
+
+workersRoutes.delete('/:id/vehicle', async (req, res) => {
+    try {
+        const user: IUserDoc = req['user'];
+        if (!user.permissions.entrepreneur) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const workerId = req.params.id;
+        if (!workerId) {
+            return res.status(404).send('Funcionário em falta!');
+        }
+
+        const worker = await Worker.findById(workerId);
+        if (!worker) {
+            return res.status(404).send('Funcionário não encontrado!');
+        }
+
+        if (!user.permissions.superhero && user._id !== worker.ownerId) {
+            return res.status(400).send('Sem permissões!');
+        }
+
+        const { vehicleId } = req.body;
+        if (!vehicleId) {
+            return res.status(404).send('Veículo em falta!');
+        }
+
+        const vehicle = await Vehicle.findById(vehicleId);
+        if (!vehicle) {
+            return res.status(404).send('Veículo não encontrado!');
+        }
+
+        worker.vehicles = worker.vehicles.filter(vId => vId !== vehicleId)
+        worker.updatedAt = new Date();
+        worker.updatedBy = user._id;
+        worker.save()
+
+        return res.status(200).send();
     } catch (e) {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
     }

@@ -5,7 +5,7 @@ import * as mongoose from 'mongoose';
 
 // import { mongoose } from './../db';
 
-interface IPermissionsDoc extends mongoose.Document {
+export interface IPermissionsDoc extends mongoose.Document {
     basic: boolean;
     worker: boolean;
     entrepreneur: boolean;

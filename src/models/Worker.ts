@@ -1,12 +1,14 @@
 ''// import validator from 'validator';
 import * as mongoose from 'mongoose';
+import { IVehicleDoc } from './Vehicle';
 
 // import { mongoose } from './../db';
 
-interface IWorkerDoc extends mongoose.Document {
+export interface IWorkerDoc extends mongoose.Document {
     ownerId: string,
     userId: string,
     active: boolean,
+    vehicles: string[],
     createdAt: Date,
     createdBy: string,
     updatedAt: Date,
@@ -23,6 +25,13 @@ const workerSchema = new mongoose.Schema<IWorkerDoc>({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
+    },
+    vehicles: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Vehicle'
+        }],
+        required: true
     },
     active: {
         type: Boolean,

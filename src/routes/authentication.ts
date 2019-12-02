@@ -28,8 +28,10 @@ authRoutes.post('/register', async (req, res) => {
             }
         }
 
+        const { name, email, password } = req.body;
+
         // Inserção de User
-        const user = new User(req.body)
+        const user = new User({ name, email, password })
         await user.save()
 
         // Geração de jwt token
@@ -45,6 +47,7 @@ authRoutes.post('/register', async (req, res) => {
     }
 });
 
+// Em uso
 authRoutes.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;

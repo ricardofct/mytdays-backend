@@ -5,11 +5,12 @@ import * as mongoose from 'mongoose';
 
 // import { mongoose } from './../db';
 
-interface IVehicleDoc extends mongoose.Document {
+export interface IVehicleDoc extends mongoose.Document {
     name: string;
     plate: string;
     plateDate: Date;
     ownerId: string;
+    active: boolean;
     createdAt: Date;
     createdBy: string;
     updatedAt: Date;
@@ -38,6 +39,10 @@ const carSchema = new mongoose.Schema<IVehicleDoc>({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
+    },
+    active: {
+        type: Boolean,
+        default: true
     },
     createdAt: {
         type: Date,

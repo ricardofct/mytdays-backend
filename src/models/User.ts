@@ -2,7 +2,7 @@
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 import * as mongoose from 'mongoose';
-import { Permissions } from './Permission';
+import { Permissions, IPermissionsDoc } from './Permission';
 
 // import { mongoose } from './../db';
 
@@ -10,11 +10,14 @@ export interface IUserDoc extends mongoose.Document {
     name: string;
     email: string;
     password: string;
-    permissions: string;
+    permissions: IPermissionsDoc;
     createdAt: Date;
     tokens: any;
+    loginTries: number;
+    loginTriesResetAt: Date;
     passwordResetToken: string;
     passwordResetExpires: Date;
+    active: boolean;
     generateAuthToken(): Promise<string>;
 }
 
@@ -41,13 +44,13 @@ const userSchema = new mongoose.Schema<IUserDoc>({
     password: {
         type: String,
         required: [true, 'Senha é obrigatória!'],
-        select: false,
+        // select: false,
         minLength: 7
     },
     permissions: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Permissions',
-        select: false,
+        // select: false,
     },
     createdAt: {
         type: Date,
@@ -60,16 +63,32 @@ const userSchema = new mongoose.Schema<IUserDoc>({
                 required: true
             }
         }],
-        select: false,
+        // select: false,
+    },
+    lastLogin: {
+        type: Date,
+        default: Date.now
+    },
+    loginTries: {
+        type: Number,
+        default: 5,
+    },
+    loginTriesResetAt: {
+        type: Date
     },
     passwordResetToken: {
         type: String,
-        select: false,
+        // select: false,
     },
     passwordResetExpires: {
         type: Date,
         select: false
+    },
+    active: {
+        type: Boolean,
+        default: true
     }
+
 })
 
 userSchema.pre<IUserDoc>('save', async function (next) {
@@ -109,20 +128,35 @@ userSchema.methods.generateAuthToken = async function () {
     })
 
     user.tokens = user.tokens.concat({ token })
+    user.lastLogin = new Date();
     await user.save()
     return token
 }
 
 userSchema.statics.findByCredentials = async (email: string, password: string) => {
     // Search for a user by email and password.
-    const user = await User.findOne({ email }).select('+password tokens');
+
+    const user = await User.findOne({ email });
+    const now = new Date();
+    if (!user.loginTries && user.loginTriesResetAt > now) {
+        const retryDate = ((user.loginTriesResetAt.valueOf() - now.valueOf()) / 1000) / 60;
+        throw new Error('Tentativas de entrada excedidas! Por favor, tente novamente dentro de ' + retryDate + ' minutos.')
+    }
     if (!user) {
         throw new Error('Credenciais inválidas!')
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password)
     if (!isPasswordMatch) {
+        user.loginTries--;
+        if (!user.loginTries) {
+            now.setHours(now.getHours() + 1)
+            user.loginTriesResetAt = now;
+        }
+        user.save();
         throw new Error('Credenciais inválidas!')
     }
+    user.loginTries = 3;
+
     return user
 }
 
