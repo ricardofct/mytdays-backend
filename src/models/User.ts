@@ -138,12 +138,12 @@ userSchema.statics.findByCredentials = async (email: string, password: string) =
 
     const user = await User.findOne({ email });
     const now = new Date();
+    if (!user) {
+        throw new Error('Credenciais inválidas!')
+    }
     if (!user.loginTries && user.loginTriesResetAt > now) {
         const retryDate = ((user.loginTriesResetAt.valueOf() - now.valueOf()) / 1000) / 60;
         throw new Error('Tentativas de entrada excedidas! Por favor, tente novamente dentro de ' + retryDate + ' minutos.')
-    }
-    if (!user) {
-        throw new Error('Credenciais inválidas!')
     }
     const isPasswordMatch = await bcrypt.compare(password, user.password)
     if (!isPasswordMatch) {
