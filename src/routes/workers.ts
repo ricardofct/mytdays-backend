@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as crypto from 'crypto';
+import * as mongoose from 'mongoose';
 
 import { authorization } from '../middleware/authorization';
 import { Invite, IInviteDoc } from '../models/Invite';
@@ -139,6 +140,29 @@ workersRoutes.get('/:id/workdays', async (req, res) => {
 
     } catch (e) {
         return res.status(400).send({ error: ErrorHelper.getErrorMessage(e) });
+    }
+})
+
+
+workersRoutes.get('/vehicles', async (req, res) => {
+    try {
+        const user: IUserDoc = req['user'];
+
+        const worker = await Worker.findOne({ userId: user.id });
+
+        const vehiclesIds = worker.vehicles.map(
+            id => mongoose.Types.ObjectId(id)
+        );
+
+        let vehicles = await Vehicle.find({
+
+            '_id': { $in: vehiclesIds }
+
+        });;
+
+        return res.status(200).send({ vehicles })
+    } catch (error) {
+        return res.status(400).send({ error: ErrorHelper.getErrorMessage(error) })
     }
 })
 

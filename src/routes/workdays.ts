@@ -88,7 +88,8 @@ workdaysRoutes.post('/:id/endday', async (req, res) => {
         const {
             flag,
             euro,
-            km
+            km,
+            fuel
         } = req.body;
         const user: IUserDoc = req['user'];
         const workdayId = req.params['id'];
@@ -124,6 +125,8 @@ workdaysRoutes.post('/:id/endday', async (req, res) => {
             updatedBy: worker.userId,
             justification: null
         }
+
+        workday.fuel = fuel;
 
         workday.save();
 
